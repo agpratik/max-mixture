@@ -2,7 +2,7 @@ I. Dependency:
 
 max-mixture only depends on g2o. You should be fine if g2o compiles. 
 the version of g2o we support is the current master branch at github/g2o
-(not the svn version)
+(not the svn version).
 
 ===============================================================================
 
@@ -20,7 +20,7 @@ w_i    = weight used for ith edge
 edge_i = standard g2o edge data of type = TYPE
 
 ===============================================================================
-III. Building:
+III. Compiling:
 
 we recommend the "out of core" build.
 
@@ -42,16 +42,17 @@ It handles this by find the most feasible mode/edge at every
 iteration. Though simple to implement this changes the memory allocation
 structure of the Jacobian at every iteration.
 
-1. Hence the intialize() method must be called if multi-modal
+1. Hence the solver.intialize() method must be called if multi-modal
 formulation is used. Basically the user cannot call solve for more than
 a single step. You need to call solve with one iteration within a loop.
 
 2. If using max-mixture only for outlier rejection the memory allocation
-pattern does not change -- hence initialize() need not be called. 
+pattern does not change -- hence initialize() need not be called at each iteration.
 
 ===============================================================================
 
 V. Datasets:
+
 Few example datasets are available inside max-mixtures/datasets
 
 
@@ -59,7 +60,7 @@ Few example datasets are available inside max-mixtures/datasets
 
 VI Example:
 
-~/g2o_viewer -typeslib
+~/g2o_viewer -typeslib path-to-max-mixture/lib/libg2o_max_mix_core.so dataset.g2o
 
 
 ===============================================================================

@@ -36,7 +36,6 @@
 EdgeSE2Mixture::EdgeSE2Mixture() : g2o::EdgeSE2::EdgeSE2()
 {
   numberComponents = 0;
-  //verticesChanged = false;
   int bestComponent = -1;
 }
 
@@ -97,20 +96,6 @@ void EdgeSE2Mixture::computeError()
   g2o::EdgeSE2::computeError();
 }
 
-//very bad hack! can be changed with a slight modification of reading edges in g2o
-// void EdgeSE2Mixture::updateVertexPairs()
-// {
-//   for(unsigned int i=0;i<numberComponents;++i){
-//     VertexSE2* first = static_cast<VertexSE2*>(allEdges[i]->vertex(0));
-//     if(!first){
-//       allEdges[i]->setVertex(0,this->graph()->vertex(vertexPairs[i].first));
-//       allEdges[i]->setVertex(1,this->graph()->vertex(vertexPairs[i].second));
-//     }else{
-//       break;
-//     }
-//   }  
-// }
-
 double EdgeSE2Mixture::getNegLogProb(unsigned int c)
 {  
   allEdges[c]->computeError(); 
@@ -128,11 +113,6 @@ void EdgeSE2Mixture::linearizeOplus()
   
   //UpdateBelief(bestComponent); //already done in compute error
   g2o::EdgeSE2::linearizeOplus();    
-  //needs to be done since the vertex pair might have changed
-  //Not sure if this is required 
-  //it might be that we get this for free 
-  //if(verticesChanged)
-  //  g2o::EdgeSE2::constructQuadraticForm();  
 }
 
 int EdgeSE2Mixture::getBestComponent() const
@@ -156,7 +136,6 @@ bool EdgeSE2Mixture::read(std::istream& is)
   allEdges.reserve(numberComponents);  
   weights.reserve(numberComponents);  
   determinants.reserve(numberComponents);
-  //vertexPairs.reserve(numberComponents);
   
   Vector3d p;
   double w;
