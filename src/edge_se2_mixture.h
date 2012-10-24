@@ -55,8 +55,8 @@ class EdgeSE2Mixture : public g2o::EdgeSE2
     //void initializeComponents(std::vector<EdgeSE2Container*> data);
     void initializeComponents(std::vector<g2o::EdgeSE2*>& edges, std::vector<double>& weights);
     void UpdateBelief(int i);
-    virtual void computeError();
-    virtual void linearizeOplus();
+    void computeError();
+    void linearizeOplus();
     
     void computeBestEdge();
     int getBestComponent()const;

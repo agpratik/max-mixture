@@ -66,15 +66,9 @@ void EdgeSE2Mixture::initializeComponents(std::vector< g2o::EdgeSE2* >& _edges, 
 
 void EdgeSE2Mixture::UpdateBelief(int i)
 {
-  //required for multimodal max-mixtures
-  if(allEdges[i]->vertex(0)!=_vertices[0] || allEdges[i]->vertex(1)!=_vertices[1]){
-    if(_vertices[0] && _vertices[1]) cerr << "\nVertices changed from |"<<_vertices[0]->id()<<" "<<_vertices[1]->id()<<"| ";    
-    this->setVertex(0,allEdges[i]->vertex(0));
-    this->setVertex(1,allEdges[i]->vertex(1));           
-    cerr <<"To |"<<_vertices[0]->id()<<" "<<_vertices[1]->id()<<"| ";
-    verticesChanged = true;    
-    //constructQuadraticForm();
-  }
+  //required for multimodal max-mixtures, for inlier/outliers the vertices would not change 
+  this->setVertex(0,allEdges[i]->vertex(0));
+  this->setVertex(1,allEdges[i]->vertex(1));           
   
   double p[3];
   allEdges[i]->getMeasurementData(p);
@@ -85,12 +79,9 @@ void EdgeSE2Mixture::UpdateBelief(int i)
 //get the edge with max probability 
 void EdgeSE2Mixture::computeError()
 { 
-  //xxx bad hack! can be changed with a small modofication in g2o
-  //updateVertexPairs();
   int best = -1;
   double minError = numeric_limits<double>::max();
-  for(unsigned int i=0;i<numberComponents;i++){
-    //allEdges[i]->computeError();
+  for(unsigned int i=0;i<numberComponents;i++){    
     double thisNegLogProb = getNegLogProb(i);
     if(minError>thisNegLogProb){
       best = i;
@@ -98,11 +89,11 @@ void EdgeSE2Mixture::computeError()
     }
   } 
   
-  if(best!=bestComponent){
-    bestComponent = best;
-    UpdateBelief(bestComponent);
-  }
-  //_error = minError;
+  bestComponent = best;
+  UpdateBelief(bestComponent);
+  //cerr << "\nBest component is "<<bestComponent<<"\n";
+  
+  //this will be used by the optimizer
   g2o::EdgeSE2::computeError();
 }
 
@@ -182,8 +173,13 @@ bool EdgeSE2Mixture::read(std::istream& is)
     int na,nb;
     is >> na;
     is >> nb;
-    allEdges[c]->setVertex(0,va->graph()->vertex(na));
-    allEdges[c]->setVertex(1,va->graph()->vertex(nb));
+    
+    VertexSE2* v0 = static_cast<VertexSE2*>(va->graph()->vertex(na));
+    VertexSE2* v1 = static_cast<VertexSE2*>(va->graph()->vertex(nb));
+    assert(v0!=NULL);
+    assert(v1!=NULL);
+    allEdges[c]->setVertex(0,v0);
+    allEdges[c]->setVertex(1,v1);
         
     //vertexPairs.push_back(std::pair<int,int>(na,nb));                
     //is>> weights[c];      

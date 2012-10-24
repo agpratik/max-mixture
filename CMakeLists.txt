@@ -22,21 +22,40 @@ set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -fPIC -ggdb")
 if(G2O_FOUND)
     if(G2O_INCLUDE_DIR)
         message(STATUS "G2O include dir is ${G2O_INCLUDE_DIR}")
+    else(G2O_INCLUDE_DIR)
+        message(STATUS "G2O include dir not found")
     endif()
     
     if(G2O_TYPES_SLAM2D)
-        message(STATUS "G2O_TYPES_SLAM2D dir is ${G2O_TYPES_SLAM2D}")
+        message(STATUS "G2O_TYPES_SLAM2D lib is ${G2O_TYPES_SLAM2D}")
+    else(G2O_TYPES_SLAM2D)
+        message(STAUS "G2O_TYPES_SLAM2D Not found")
     endif()
     
     if(G2O_TYPES_SLAM3D)
-        message(STATUS "G2O_TYPES_SLAM3D dir is ${G2O_TYPES_SLAM3D}")
+        message(STATUS "G2O_TYPES_SLAM3D lib is ${G2O_TYPES_SLAM3D}")
+    else(G2O_TYPES_SLAM3D)
+        message(STAUS "G2O_TYPES_SLAM3D not found")
     endif()
-    
+   
+    if(G2O_STUFF_LIBRARY)
+        message(STATUS " G2O_STUFF_LIBS lib is ${G2O_STUFF_LIBRARY}")
+    else(G2O_STUFF_LIBRARY)
+        message(STAUS "G2O_STUFF_LIBS not found")
+    endif()
+
+    if(G2O_CORE_LIBRARY)
+        message(STATUS "G2O_CORE_LIBS lib is ${G2O_CORE_LIBRARY}")
+    else(G2O_CORE_LIBS)
+        message(STAUS "G2O_CORE_LIBS not found")
+    endif()
+
+
     #required for g2o/config.h 
     #It assumes the outof core built was used. 
     set(G2O_BUILD_DIR ${G2O_INCLUDE_DIR}/build)
 
-    set(G2O_ALL_LIBS ${G2O_TYPES_SLAM2D} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBS} ${G2O_STUFF_LIBS})
+    set(G2O_ALL_LIBS ${G2O_TYPES_SLAM2D} ${G2O_TYPES_SLAM3D} ${G2O_CORE_LIBRARY} ${G2O_STUFF_LIBRARY})
     include_directories(${G2O_INCLUDE_DIR} ${G2O_BUILD_DIR} ${EIGEN3_INCLUDE_DIR})
     MESSAGE(STATUS "Found g2o")
     add_subdirectory(src)
