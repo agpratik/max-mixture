@@ -28,7 +28,7 @@
  * Pratik Agarwal -- Max Mixture, the key thing here is that the graph can connect 
  * multiple pair of nodes with only the required number of pairs being used in the optimization
  * The implementation becomes a little complicated when we try to model multiple data association 
- * using a single edge
+ * using a single edge.
  */
 
 #ifndef EDGE_SE2_MIXTURE
@@ -48,8 +48,8 @@ class EdgeSE2Mixture : public g2o::EdgeSE2
         
     EdgeSE2Mixture();
     EdgeSE2Mixture(std::vector< g2o::EdgeSE2* >& _edges, std::vector< double >& _weights);
-    virtual bool read(std::istream& is);
-    virtual bool write(std::ostream& os)const;
+    bool read(std::istream& is);
+    bool write(std::ostream& os)const;
     virtual ~EdgeSE2Mixture();
     
     //void initializeComponents(std::vector<EdgeSE2Container*> data);
@@ -78,9 +78,10 @@ class EdgeSE2Mixture : public g2o::EdgeSE2
     std::vector<g2o::EdgeSE2*> allEdges;
     std::vector<double> weights; 
     std::vector<double> determinants;
+    
     bool verticesChanged;
     //to read vertices for subedges
-    std::vector<std::pair<int,int> > vertexPairs;
+    //std::vector<std::pair<int,int> > vertexPairs;
     
     //bool onlyCorruptedGaussian = true; //if only corruptedGaussian then we dont need to allocate hessian memory
 };

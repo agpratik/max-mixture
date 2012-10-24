@@ -36,7 +36,7 @@
 EdgeSE2Mixture::EdgeSE2Mixture() : g2o::EdgeSE2::EdgeSE2()
 {
   numberComponents = 0;
-  verticesChanged = false;
+  //verticesChanged = false;
   int bestComponent = -1;
 }
 
@@ -54,22 +54,25 @@ void EdgeSE2Mixture::initializeComponents(std::vector< g2o::EdgeSE2* >& _edges, 
 {
   this->allEdges = _edges;
   this->weights = _weights;
-  UpdateBelief(0);
+  
   numberComponents = _edges.size();
    for(unsigned int i=0;i<numberComponents;i++)
      determinants.push_back(allEdges[i]->information().inverse().determinant());    
+   
+   //ToDO: best
+  //UpdateBelief(0);
+    computeBestEdge(); 
 }
 
 void EdgeSE2Mixture::UpdateBelief(int i)
 {
   //required for multimodal max-mixtures
   if(allEdges[i]->vertex(0)!=_vertices[0] || allEdges[i]->vertex(1)!=_vertices[1]){
-    //if(!_vertices[0] && !_vertices[1]) cerr << "\nVertices changed from |"<<_vertices[0]->id()<<" "<<_vertices[1]->id()<<"| ";    
+    if(_vertices[0] && _vertices[1]) cerr << "\nVertices changed from |"<<_vertices[0]->id()<<" "<<_vertices[1]->id()<<"| ";    
     this->setVertex(0,allEdges[i]->vertex(0));
-    this->setVertex(1,allEdges[i]->vertex(1));    
-    //cerr <<"To |"<<_vertices[0]->id()<<" "<<_vertices[1]->id()<<"| ";
-    verticesChanged = true;
-    
+    this->setVertex(1,allEdges[i]->vertex(1));           
+    cerr <<"To |"<<_vertices[0]->id()<<" "<<_vertices[1]->id()<<"| ";
+    verticesChanged = true;    
     //constructQuadraticForm();
   }
   
@@ -79,12 +82,11 @@ void EdgeSE2Mixture::UpdateBelief(int i)
   this->setInformation(allEdges[i]->information());  
 }
 
-//get the edge with max probability and then create initialize the hessian 
-//memory if the nodes have changed
+//get the edge with max probability 
 void EdgeSE2Mixture::computeError()
 { 
   //xxx bad hack! can be changed with a small modofication in g2o
-  updateVertexPairs();
+  //updateVertexPairs();
   int best = -1;
   double minError = numeric_limits<double>::max();
   for(unsigned int i=0;i<numberComponents;i++){
@@ -105,18 +107,18 @@ void EdgeSE2Mixture::computeError()
 }
 
 //very bad hack! can be changed with a slight modification of reading edges in g2o
-void EdgeSE2Mixture::updateVertexPairs()
-{
-  for(unsigned int i=0;i<numberComponents;++i){
-    VertexSE2* first = static_cast<VertexSE2*>(allEdges[i]->vertex(0));
-    if(!first){
-      allEdges[i]->setVertex(0,this->graph()->vertex(vertexPairs[i].first));
-      allEdges[i]->setVertex(1,this->graph()->vertex(vertexPairs[i].second));
-    }else{
-      break;
-    }
-  }  
-}
+// void EdgeSE2Mixture::updateVertexPairs()
+// {
+//   for(unsigned int i=0;i<numberComponents;++i){
+//     VertexSE2* first = static_cast<VertexSE2*>(allEdges[i]->vertex(0));
+//     if(!first){
+//       allEdges[i]->setVertex(0,this->graph()->vertex(vertexPairs[i].first));
+//       allEdges[i]->setVertex(1,this->graph()->vertex(vertexPairs[i].second));
+//     }else{
+//       break;
+//     }
+//   }  
+// }
 
 double EdgeSE2Mixture::getNegLogProb(unsigned int c)
 {  
@@ -154,7 +156,7 @@ void EdgeSE2Mixture::computeBestEdge()
 
 //note g2o takes care of creating the first two vertices 
 //its problematic since all edges are taken care in this way 
-//EDGE_SE2_MIXTURE na nb numComponents Edgetype_i w_i na_i nb_i 
+//EDGE_SE2_MIXTURE va vb numComponents Edgetype_i w_i na_i nb_i 
 bool EdgeSE2Mixture::read(std::istream& is)
 {
 
@@ -163,10 +165,12 @@ bool EdgeSE2Mixture::read(std::istream& is)
   allEdges.reserve(numberComponents);  
   weights.reserve(numberComponents);  
   determinants.reserve(numberComponents);
-  vertexPairs.reserve(numberComponents);
+  //vertexPairs.reserve(numberComponents);
   
   Vector3d p;
   double w;
+  
+  VertexSE2* va = static_cast<VertexSE2*>(this->vertex(0));
   
   for(int c=0;c<numberComponents;c++){
     EdgeSE2* e = new EdgeSE2;    
@@ -178,7 +182,10 @@ bool EdgeSE2Mixture::read(std::istream& is)
     int na,nb;
     is >> na;
     is >> nb;
-    vertexPairs.push_back(std::pair<int,int>(na,nb));                
+    allEdges[c]->setVertex(0,va->graph()->vertex(na));
+    allEdges[c]->setVertex(1,va->graph()->vertex(nb));
+        
+    //vertexPairs.push_back(std::pair<int,int>(na,nb));                
     //is>> weights[c];      
     is >> p[0] >> p[1] >> p[2];
     //cerr<<"\nMeasurement "<< p[0] <<" " <<p[1]<<" "<< p[2] <<" ";    
@@ -194,11 +201,12 @@ bool EdgeSE2Mixture::read(std::istream& is)
   }
     
   for(unsigned int i=0;i<numberComponents;i++)
-     determinants.push_back(allEdges[i]->information().inverse().determinant());    
-  UpdateBelief(0);
+     determinants.push_back(allEdges[i]->information().inverse().determinant());
+  
+  //UpdateBelief(0);
+  computeBestEdge();
   return is.good();
 }
-
 
 bool EdgeSE2Mixture::write(std::ostream& os) const
 {
