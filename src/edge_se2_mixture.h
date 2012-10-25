@@ -24,13 +24,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-/*
- * Pratik Agarwal -- Max Mixture, the key thing here is that the graph can connect 
- * multiple pair of nodes with only the required number of pairs being used in the optimization
- * The implementation becomes a little complicated when we try to model multiple data association 
- * using a single edge.
- */
-
 #ifndef EDGE_SE2_MIXTURE
 #define EDGE_SE2_MIXTURE
 
@@ -42,35 +35,65 @@ using namespace std;
 using namespace Eigen;
 using namespace g2o;
 
+/**
+ * SE2 Max-Mixture
+ */
 class EdgeSE2Mixture : public g2o::EdgeSE2
 {
   public:
-        
+    /**
+     * Deafult constructor
+     */    
     EdgeSE2Mixture();
+    
+    /**
+     * Constructor
+     * @param _edges each se2edge with nodes and information already initialized
+     * @param _weight by default we chose the weight of the first component to be 1
+     */
     EdgeSE2Mixture(std::vector< g2o::EdgeSE2* >& _edges, std::vector< double >& _weights);
+        
     bool read(std::istream& is);
     bool write(std::ostream& os)const;
     virtual ~EdgeSE2Mixture();
     
-    //void initializeComponents(std::vector<EdgeSE2Container*> data);
+    
     void initializeComponents(std::vector<g2o::EdgeSE2*>& edges, std::vector<double>& weights);
+    
+    /**
+     * Updates the current belief to the component numbered i
+     * @param i component number
+     */
     void UpdateBelief(int i);
+        
     void computeError();
     void linearizeOplus();
     
+    /**
+     * Computes the best component
+     */
     void computeBestEdge();
+    
+    /**
+     * @return the best component 
+     */
     int getBestComponent()const;
+    
+    /**
+     * return the edge corresponding to component i
+     * here to compute stats regarding the operation
+     */
     EdgeSE2* getComponent(int i);
     
     int numberComponents;
     
   private:
 
-    double getNegLogProb(unsigned int c);
-    
-    //kind of a hack to read the vertices into allEdges once the mixture edge is added to the graph
-    //could be solved if we have a pointer to the graph within the read function 
-    void updateVertexPairs();
+    /**
+     * Computes the neglative log likelihood of a given component
+     * @param c component whole Negative log should be computed
+     */
+    double getNegLogProb(unsigned int c);        
     
     //out of the components which is the best one (max-probability)    
     
@@ -80,10 +103,6 @@ class EdgeSE2Mixture : public g2o::EdgeSE2
     std::vector<double> determinants;
     
     bool verticesChanged;
-    //to read vertices for subedges
-    //std::vector<std::pair<int,int> > vertexPairs;
-    
-    //bool onlyCorruptedGaussian = true; //if only corruptedGaussian then we dont need to allocate hessian memory
 };
 
 

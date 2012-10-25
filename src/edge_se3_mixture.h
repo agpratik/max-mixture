@@ -24,14 +24,6 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-
-/*
- * Pratik Agarwal -- Max Mixture, the key thing here is that the graph can connect
- * multiple pair of nodes with only the required number of pairs being used in the optimization
- * The implementation becomes a little complicated when we try to model multiple data association
- * using a single edge
- */
-
 #ifndef EDGE_SE3_MIXTURE
 #define EDGE_SE3_MIXTURE
 
@@ -53,11 +45,11 @@ class EdgeSE3Mixture : public g2o::EdgeSE3
     virtual bool write(std::ostream& os)const;
     virtual ~EdgeSE3Mixture();
 
-    //void initializeComponents(std::vector<EdgeSE3Container*> data);
+    
     void initializeComponents(std::vector<g2o::EdgeSE3*>& edges, std::vector<double>& weights);
     void UpdateBelief(int i);
     void computeError();
-    //virtual void chi2();
+    
     void linearizeOplus();
     
     void computeBestEdge();
@@ -68,12 +60,6 @@ class EdgeSE3Mixture : public g2o::EdgeSE3
   private:
 
     double getNegLogProb(unsigned int c);
-
-    //kind of a hack to read the vertices into allEdges once the mixture edge is added to the graph
-    //could be solved if we have a pointer to the graph within the read function
-    void updateVertexPairs();
-
-    //out of the components which is the best one (max-probability)
 
     int bestComponent;
     std::vector<g2o::EdgeSE3*> allEdges;

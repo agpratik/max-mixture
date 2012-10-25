@@ -158,7 +158,7 @@ bool EdgeSE2Mixture::read(std::istream& is)
     assert(v0!=NULL);
     assert(v1!=NULL);
     allEdges[c]->setVertex(0,v0);
-    allEdges[c]->setVertex(1,v1);
+  allEdges[c]->setVertex(1,v1);
         
     //vertexPairs.push_back(std::pair<int,int>(na,nb));                
     //is>> weights[c];      

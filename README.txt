@@ -45,11 +45,11 @@ structure of the Jacobian at every iteration.
 1. Hence the solver.intialize() method must be called if multi-modal
 formulation is used. Basically the user cannot call solve for more than
 a single iteration since the underlying memory structure would change.
-Also either the compute error method for each edge must be called before
-building the structure so that the correct component can be initialized.
+The compute error method for each mixture edge must be called (which updates the belief) before
+building the structure. 
 
 2. If using max-mixture only for outlier rejection the memory allocation
-pattern does not change -- hence initialize() need not be called at each iteration.
+pattern does not change hence nothing needs to be done.
 
 ===============================================================================
 

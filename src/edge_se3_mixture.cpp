@@ -36,7 +36,7 @@
 EdgeSE3Mixture::EdgeSE3Mixture() : g2o::EdgeSE3::EdgeSE3()
 {
   numberComponents = 0;
-  verticesChanged = false;
+  int bestComponent = -1;
 }
 
 EdgeSE3Mixture::~EdgeSE3Mixture()
@@ -53,20 +53,20 @@ void EdgeSE3Mixture::initializeComponents(std::vector< g2o::EdgeSE3* >& _edges, 
 {
   this->allEdges = _edges;
   this->weights = _weights;
-  UpdateBelief(0);
+  //UpdateBelief(0);
   numberComponents = _edges.size();
    for(unsigned int i=0;i<numberComponents;i++)
      determinants.push_back(allEdges[i]->information().inverse().determinant());
+   
+   computeBestEdge();
 }
 
 void EdgeSE3Mixture::UpdateBelief(int i)
 {
-  //required for multimodal max-mixtures
-  if(allEdges[i]->vertex(0)!=_vertices[0] || allEdges[i]->vertex(1)!=_vertices[1]){
-    this->setVertex(0,allEdges[i]->vertex(0));
-    this->setVertex(1,allEdges[i]->vertex(1));
-    verticesChanged = true;
-  }
+  //required for multimodal max-mixtures, this part may be optimized for speed, 
+  //do this only when component changed.
+  this->setVertex(0,allEdges[i]->vertex(0));
+  this->setVertex(1,allEdges[i]->vertex(1));
 
   double p[7];
   allEdges[i]->getMeasurementData(p);
@@ -74,12 +74,8 @@ void EdgeSE3Mixture::UpdateBelief(int i)
   this->setInformation(allEdges[i]->information());
 }
 
-//get the edge with max probability and then create initialize the hessian
-//memory if the nodes have changed
 void EdgeSE3Mixture::computeError()
-{
-  //xxx bad hack! can be changed with a small modofication in g2o
-  updateVertexPairs();
+{  
   int best = -1;
   double minError = numeric_limits<double>::max();
   for(unsigned int i=0;i<numberComponents;i++){
@@ -91,26 +87,11 @@ void EdgeSE3Mixture::computeError()
     }
   } 
   
-  if(best!=bestComponent){
+  //if(best!=bestComponent){
     bestComponent = best;
     UpdateBelief(bestComponent);
-  }
-  //_error = minError;
+  //}
   g2o::EdgeSE3::computeError();
-}
-
-//very bad hack! can be changed with a slight modification of reading edges in g2o
-void EdgeSE3Mixture::updateVertexPairs()
-{
-  for(unsigned int i=0;i<numberComponents;++i){
-    VertexSE3* first = static_cast<VertexSE3*>(allEdges[i]->vertex(0));
-    if(!first){
-      allEdges[i]->setVertex(0,this->graph()->vertex(vertexPairs[i].first));
-      allEdges[i]->setVertex(1,this->graph()->vertex(vertexPairs[i].second));
-    }else{
-      break;
-    }
-  }
 }
 
 double EdgeSE3Mixture::getNegLogProb(unsigned int c)
@@ -124,17 +105,7 @@ double EdgeSE3Mixture::getNegLogProb(unsigned int c)
 
 void EdgeSE3Mixture::linearizeOplus()
 {
-  computeError();
-  //the best component must be updated here
-  //else computeError can be called
-  UpdateBelief(bestComponent);
-
-  //needs to be done since the vertex pair might have changed
-  //Not sure if this is required
-  //it might be that we get this for free
-  if(verticesChanged)
-    g2o::EdgeSE3::constructQuadraticForm();
-
+  EdgeSE3Mixture::computeError();
   g2o::EdgeSE3::linearizeOplus();
 }
 
@@ -148,9 +119,6 @@ void EdgeSE3Mixture::computeBestEdge()
   computeError();
 }
 
-//note g2o takes care of creating the first two vertices
-//its problematic since all edges are taken care in this way
-//EDGE_SE3_MIXTURE na nb numComponents Edgetype_i w_i na_i nb_i
 bool EdgeSE3Mixture::read(std::istream& is)
 {
 
@@ -159,12 +127,12 @@ bool EdgeSE3Mixture::read(std::istream& is)
   allEdges.reserve(numberComponents);
   weights.reserve(numberComponents);
   determinants.reserve(numberComponents);
-  vertexPairs.reserve(numberComponents);
 
-  //double p[7];
   Vector7d p;
   double w;
 
+  VertexSE3* va = static_cast<VertexSE3*>(this->vertex(0));
+  
   for(int c=0;c<numberComponents;c++){
     EdgeSE3* e = new EdgeSE3;
     allEdges.push_back(e);
@@ -175,13 +143,18 @@ bool EdgeSE3Mixture::read(std::istream& is)
     int na,nb;
     is >> na;
     is >> nb;
-    vertexPairs.push_back(std::pair<int,int>(na,nb));
-    //is>> weights[c];
+    
+    VertexSE3* v0 = static_cast<VertexSE3*>(va->graph()->vertex(na));
+    VertexSE3* v1 = static_cast<VertexSE3*>(va->graph()->vertex(nb));
+    assert(v0!=NULL);
+    assert(v1!=NULL);
+    allEdges[c]->setVertex(0,v0);
+    allEdges[c]->setVertex(1,v1);
+    
     for(int i=0;i<7;i++)
       is >> p[i];
     Vector4d::MapType(p.data()+3).normalize();
     
-    //cerr<<"\nMeasurement "<< p[0] <<" " <<p[1]<<" "<< p[2] <<" ";
     allEdges[c]->setMeasurementData(p.data());
     InformationType inf;
     for (int i = 0; i < 6; ++i)
@@ -195,7 +168,8 @@ bool EdgeSE3Mixture::read(std::istream& is)
 
   for(unsigned int i=0;i<numberComponents;i++)
      determinants.push_back(allEdges[i]->information().inverse().determinant());
-  UpdateBelief(0);
+  
+  computeBestEdge();
   return is.good();
 }
 
