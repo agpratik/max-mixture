@@ -10,7 +10,7 @@ II. format for datasets:
 
 The vertices remain unchanged 
 
-EDGE_TYPE_MIXTURE va vb n w_1 edge_1 w_2 edge_2 ..
+EDGE_TYPE_MIXTURE va vb n EDGE_TAG w_1 edge_1 EDGE_TAG w_2 edge_2 ..
 TYPE = {SE2,SE3:QUAT,POINTXY}
 va, vb = vertices the edge currently connects. This will be constantly
             updated during each iteration.
