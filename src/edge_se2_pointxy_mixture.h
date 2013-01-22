@@ -70,10 +70,6 @@ class EdgeSE2PointXYMixture : public g2o::EdgeSE2PointXY
 
     double getNegLogProb(unsigned int c);
 
-    //kind of a hack to read the vertices into allEdges once the mixture edge is added to the graph
-    //could be solved if we have a pointer to the graph within the read function
-    void updateVertexPairs();
-
     //out of the components which is the best one (max-probability)
 
     int bestComponent;

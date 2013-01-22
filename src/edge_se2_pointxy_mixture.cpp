@@ -36,7 +36,7 @@
 EdgeSE2PointXYMixture::EdgeSE2PointXYMixture() : g2o::EdgeSE2PointXY::EdgeSE2PointXY()
 {
   numberComponents = 0;
-  verticesChanged = false;
+  int bestComponent = -1;
 }
 
 EdgeSE2PointXYMixture::~EdgeSE2PointXYMixture()
@@ -53,22 +53,20 @@ void EdgeSE2PointXYMixture::initializeComponents(std::vector< g2o::EdgeSE2PointX
 {
   this->allEdges = _edges;
   this->weights = _weights;
-  UpdateBelief(0);
+  //UpdateBelief(0);
   numberComponents = _edges.size();
    for(unsigned int i=0;i<numberComponents;i++)
      determinants.push_back(allEdges[i]->information().inverse().determinant());
+
+   computeBestEdge();
 }
 
 void EdgeSE2PointXYMixture::UpdateBelief(int i)
 {
-  //required for multimodal max-mixtures
-  if(!_vertices[0] || !_vertices[2] || 
-    allEdges[i]->vertex(0)!=_vertices[0] || 
-    allEdges[i]->vertex(1)!=_vertices[1]){
-      this->setVertex(0,allEdges[i]->vertex(0));
-      this->setVertex(1,allEdges[i]->vertex(1));
-      verticesChanged = true;
-  }
+  //required for multimodal max-mixtures, this part may be optimized for speed,
+  //do this only when component changed.
+  this->setVertex(0,allEdges[i]->vertex(0));
+  this->setVertex(1,allEdges[i]->vertex(1));
 
   double p[2];
   allEdges[i]->getMeasurementData(p);
@@ -80,34 +78,22 @@ void EdgeSE2PointXYMixture::UpdateBelief(int i)
 //memory if the nodes have changed
 void EdgeSE2PointXYMixture::computeError()
 {
-  //xxx bad hack! can be changed with a small modofication in g2o
-  updateVertexPairs();
+  int best = -1;
   double minError = numeric_limits<double>::max();
   for(unsigned int i=0;i<numberComponents;i++){
     //allEdges[i]->computeError();
     double thisNegLogProb = getNegLogProb(i);
     if(minError>thisNegLogProb){
-      bestComponent = i;
+      best = i;
       minError = thisNegLogProb;
     }
   }
 
-  UpdateBelief(bestComponent);
+  //if(best!=bestComponent){
+    bestComponent = best;
+    UpdateBelief(bestComponent);
+  //}
   g2o::EdgeSE2PointXY::computeError();
-}
-
-//very bad hack! can be changed with a slight modification of reading edges in g2o
-void EdgeSE2PointXYMixture::updateVertexPairs()
-{
-  for(unsigned int i=0;i<numberComponents;++i){
-    VertexSE2* first = static_cast<VertexSE2*>(allEdges[i]->vertex(0));
-    if(!first){
-      allEdges[i]->setVertex(0,this->graph()->vertex(vertexPairs[i].first));
-      allEdges[i]->setVertex(1,this->graph()->vertex(vertexPairs[i].second));
-    }else{
-      break;
-    }
-  }
 }
 
 double EdgeSE2PointXYMixture::getNegLogProb(unsigned int c)
@@ -121,17 +107,7 @@ double EdgeSE2PointXYMixture::getNegLogProb(unsigned int c)
 
 void EdgeSE2PointXYMixture::linearizeOplus()
 {
-  computeError();
-  //the best component must be updated here
-  //else computeError can be called
-  UpdateBelief(bestComponent);
-
-  //needs to be done since the vertex pair might have changed
-  //Not sure if this is required
-  //it might be that we get this for free
-  //if(verticesChanged)
-  //  g2o::EdgeSE2PointXY::constructQuadraticForm();
-
+  EdgeSE2PointXY::computeError();
   g2o::EdgeSE2PointXY::linearizeOplus();
 }
 
@@ -156,11 +132,14 @@ bool EdgeSE2PointXYMixture::read(std::istream& is)
   allEdges.reserve(numberComponents);
   weights.reserve(numberComponents);
   determinants.reserve(numberComponents);
-  vertexPairs.reserve(numberComponents);
 
   double p[2];
   double w;
 
+  //might throw error if first vertex is landmark
+  VertexSE2* va = static_cast<VertexSE2*>(this->vertex(0));
+  assert(va!=NULL);
+  
   for(int c=0;c<numberComponents;c++){
     EdgeSE2PointXY* e = new EdgeSE2PointXY;
     allEdges.push_back(e);
@@ -171,11 +150,19 @@ bool EdgeSE2PointXYMixture::read(std::istream& is)
     int na,nb;
     is >> na;
     is >> nb;
-    vertexPairs.push_back(std::pair<int,int>(na,nb));
+
+    VertexSE2* v0 = static_cast<VertexSE2*>(va->graph()->vertex(na));
+    VertexPointXY* v1 = static_cast<VertexPointXY*>(va->graph()->vertex(nb));
+    assert(v0!=NULL);
+    assert(v1!=NULL);
+    allEdges[c]->setVertex(0,v0);
+    allEdges[c]->setVertex(1,v1);
+    
     //is>> weights[c];
     is >> p[0] >> p[1];
     //cerr<<"\nMeasurement "<< p[0] <<" " <<p[1]<<" "<< p[2] <<" ";
     allEdges[c]->setMeasurementData(p);
+    
     InformationType inf;
     for (int i = 0; i < 2; ++i)
       for (int j = i; j < 2; ++j) {
@@ -188,7 +175,8 @@ bool EdgeSE2PointXYMixture::read(std::istream& is)
 
   for(unsigned int i=0;i<numberComponents;i++)
      determinants.push_back(allEdges[i]->information().inverse().determinant());
-  //UpdateBelief(0);
+
+  computeBestEdge();
   return is.good();
 }
 
