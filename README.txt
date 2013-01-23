@@ -66,3 +66,37 @@ VI Example:
 
 
 ===============================================================================
+
+VII Known issue:
+
+"Cholesky Decomposition is invalid". When using the landmark edges the
+cholesky solver may return invalid results. Though not thoroughly
+examined a plausible explanation is the following: If all the edges for
+a particular landmark are rejected (uses the scaled down information
+                                    matrix) the final weight
+for the landmark nodes is very very small and the hessian graph may
+become "numerically" disconnected. This can also happen for non-landmark
+pose graph cases if all edges (loop+odometry) are max-mixture edges.
+
+===============================================================================
+
+VIII Bibtex:
+
+@INPROCEEDINGS{Olson-RSS-12, 
+    AUTHOR    = {Edwin Olson AND Pratik Agarwal}, 
+    TITLE     = {Inference on networks of mixtures for robust robot mapping}, 
+    BOOKTITLE = {Proceedings of Robotics: Science and Systems}, 
+    YEAR      = {2012}, 
+    ADDRESS   = {Sydney, Australia}, 
+    MONTH     = {July} 
+}
+
+@misc{agarwal-MM,
+    author = "Pratik Agarwal and Edwin Olson and Wolfram Burgard",
+    title = "Max-mixture - open source implementation with g2o",
+    howpublished = "\url{https://github.com/agpratik/max-mixture}",
+    year = {2012},
+}
+
+===============================================================================
+
