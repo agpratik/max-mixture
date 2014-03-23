@@ -1,3 +1,7 @@
+Max-Mixture is licensed under the BSD license.
+
+==============================================================================
+
 I. Dependency:
 
 max-mixture only depends on g2o. You should be fine if g2o compiles. 
@@ -99,4 +103,3 @@ VIII Bibtex:
 }
 
 ===============================================================================
-
